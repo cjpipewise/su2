@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smash Up 2 playtest table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<script src="vendor/xlsx.full.min.js"></script>
+<style>
+:root{
+  --table:#cfb68c; --table-2:#c2a679; --card:#fbfaf3; --rule:#cfe0f2; --margin:#e7a3a3;
+  --ink:#23304a; --ink-2:#5a6680; --line:rgba(35,48,74,.18);
+  --good:#2f7d52; --warn:#b5701a; --bad:#b33a3a;
+  --p0:#2563a8; --p1:#c9661c; --p2:#2f7d52; --p3:#7a4bb0;
+  --hand-font:"Kalam","Comic Sans MS","Segoe Print",cursive;
+  --ui-font:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --table:#2a251e; --table-2:#332c23; --card:#3a362f; --rule:#4a5263; --margin:#7a4545;
+    --ink:#eee7d8; --ink-2:#b9ae9b; --line:rgba(238,231,216,.16);
+    --good:#6cc093; --warn:#e0a24f; --bad:#e07a7a;
+    --p0:#6aa7ec; --p1:#f0a05a; --p2:#6cc093; --p3:#b493e0;
+  }
+}
+:root[data-theme="dark"]{
+  --table:#2a251e; --table-2:#332c23; --card:#3a362f; --rule:#4a5263; --margin:#7a4545;
+  --ink:#eee7d8; --ink-2:#b9ae9b; --line:rgba(238,231,216,.16);
+  --good:#6cc093; --warn:#e0a24f; --bad:#e07a7a;
+  --p0:#6aa7ec; --p1:#f0a05a; --p2:#6cc093; --p3:#b493e0;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--table);background-image:radial-gradient(circle at 20% 10%,var(--table-2),transparent 60%);color:var(--ink);font:15px/1.45 var(--ui-font);min-height:100vh}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:.3em .7em;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--ink)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--card);border-color:var(--ink)}
+button.chip{border-radius:999px;font-size:13px;padding:.15em .7em}
+button.chip.used{opacity:.6}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+input,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:.25em .4em}
+h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.01em}
+.wrap{max-width:1500px;margin:0 auto;padding:12px}
+.muted{color:var(--ink-2)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.idx{position:relative;background:var(--card);border-radius:4px;box-shadow:0 1px 0 var(--line),0 3px 8px rgba(0,0,0,.12);
+  background-image:linear-gradient(to right,transparent 22px,var(--margin) 22px,var(--margin) 23px,transparent 23px),
+  repeating-linear-gradient(to bottom,transparent 0,transparent 21px,var(--rule) 21px,var(--rule) 22px);
+  background-position:0 0,0 30px;padding:6px 8px 8px 30px}
+.idx .nm{font-family:var(--hand-font);font-weight:700;font-size:19px;line-height:1.1}
+.idx .tx{font-size:13px;line-height:22px}
+.pow{font-family:var(--hand-font);font-weight:700;font-size:22px;line-height:1}
+.cost{display:inline-flex;gap:3px}
+.tok{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:800;border:1.5px solid var(--ink)}
+.tok.M{background:var(--p0);color:#fff;border-color:var(--p0)}
+.tok.A{background:var(--bad);color:#fff;border-color:var(--bad)}
+.tok.down{background:transparent;color:var(--ink-2);border-color:var(--ink-2);border-style:dashed}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.title{font-family:var(--hand-font);font-size:30px;font-weight:700;line-height:1}
+.order{display:flex;gap:4px;flex-wrap:wrap}
+.order span{font-size:12px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.order span.now{background:var(--pc);color:#fff;border-color:var(--pc)}
+.order span.done{opacity:.4}
+.board{display:grid;grid-template-columns:repeat(var(--nb),minmax(250px,1fr));gap:12px;overflow-x:auto;padding-bottom:4px}
+.base{background:color-mix(in srgb,var(--card) 70%,transparent);border:2px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.base.valid,.m.valid,.att.valid{outline:3px solid var(--good);outline-offset:2px;cursor:pointer}
+.base.sel{border-color:var(--ink)}
+.base-h{cursor:pointer}
+.base-h .bn{font-family:var(--hand-font);font-size:22px;font-weight:700}
+.rw{display:flex;gap:6px;font-size:12px;flex-wrap:wrap}
+.rw span{border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--card)}
+.tally{display:flex;flex-direction:column;gap:3px}
+.bar{display:grid;grid-template-columns:70px 1fr 28px;gap:6px;align-items:center;font-size:12px}
+.bar i{display:block;height:8px;border-radius:4px;background:var(--pc)}
+.lane{border-left:4px solid var(--pc);padding-left:6px;display:flex;flex-direction:column;gap:6px}
+.lane-h{font-size:12px;font-weight:600;color:var(--pc)}
+.m{cursor:pointer;padding:4px 8px 6px 30px}
+.m.sel{outline:3px solid var(--ink);outline-offset:2px}
+.m .hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.m .nm{font-size:17px}
+.mods{font-size:12px;display:flex;gap:6px;flex-wrap:wrap}
+.mods .e{color:var(--good);font-weight:600}
+.mods .b{color:var(--warn);font-weight:600}
+.badges{display:flex;gap:4px;flex-wrap:wrap}
+.badge{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--ink-2)}
+.att{font-size:12px;border:1px dashed var(--ink-2);border-radius:4px;padding:2px 6px;margin-top:4px;cursor:pointer;background:var(--card)}
+.att.sel{border-style:solid;border-color:var(--ink)}
+.lower{display:grid;grid-template-columns:1fr 380px;gap:12px;margin-top:12px;align-items:start}
+.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.hc{cursor:pointer;min-height:150px;display:flex;flex-direction:column;gap:2px}
+.hc.sel{outline:3px solid var(--ink);outline-offset:3px;transform:translateY(-4px)}
+.hc.off{opacity:.55}
+.hc .hd{display:flex;justify-content:space-between;align-items:center}
+.kind{font-size:11px;color:var(--ink-2)}
+.side{display:flex;flex-direction:column;gap:12px}
+.side h3{font-size:16px;margin-bottom:6px}
+.banner{background:var(--ink);color:var(--card);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.fx{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+.fx:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.fx .src{font-weight:600}
+.fx .tx{font-size:13px;color:var(--ink-2);margin:2px 0 6px}
+.pw{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px;padding:4px 0;border-top:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.stats div{border:1px solid var(--line);border-radius:6px;padding:4px}
+.stats b{display:block;font-size:20px}
+.log{max-height:220px;overflow:auto;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.log div{border-bottom:1px solid var(--line);padding:2px 0}
+.setup{max-width:860px;margin:30px auto}
+.setup .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.setup label{display:flex;flex-direction:column;font-size:13px;gap:3px}
+.pl{border-left:4px solid var(--pc);padding-left:10px;margin-top:10px}
+.score{width:100%;border-collapse:collapse;font-size:14px}
+.score td,.score th{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:10;padding:16px}
+.modal{background:var(--card);border-radius:12px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:16px}
+.modal .hand{margin-top:10px}
+.err{color:var(--bad);font-weight:600}
+@media (max-width:900px){.lower{grid-template-columns:1fr}.board{grid-template-columns:repeat(var(--nb),minmax(240px,82vw))}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+<div id="modal"></div>
+<script>
+const LABELS=/(When Played:|Talent:|Ongoing:|After Scoring:|(?<![A-Za-z])A:)/i;
+const TRAITS=['Strong','Fast','Clever','Indestructible','Immovable','Sentinel','Lonely'];
+const DEFAULT_CFG={players:2,rounds:4,hand:6,mulligan:6,counters:5,limit:10,bases:3,draw:1,blankBases:false};
+const KEY='su2sim-v1';
+let DB=null,S=null,HIST=[];
+let UI={sel:null,target:null,modal:null,pick:null,msg:'',setup:null};
+
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const P=()=>S.players[S.order[S.turn]];
+const pidNow=()=>S.order[S.turn];
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify({DB,S}))}catch(e){}}
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&v.DB){DB=v.DB;S=v.S}}catch(e){}}
+function log(m){S.log.unshift(`R${S.round}: ${m}`);S.log.length=Math.min(S.log.length,120)}
+function act(fn){HIST.push(JSON.stringify(S));if(HIST.length>200)HIST.shift();UI.msg='';fn();save();render()}
+
+function parseWorkbook(wb){
+  const sheet=wb.SheetNames.find(n=>/card list/i.test(n))||wb.SheetNames[0];
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheet],{header:1,defval:null});
+  const h=rows.findIndex(r=>r&&String(r[0]??'').trim()==='Name');
+  if(h<0)throw new Error(`Sheet "${sheet}" has no header row starting with "Name".`);
+  const hdr=rows[h].map(v=>v==null?'':String(v).trim().toLowerCase());
+  const col=k=>hdr.indexOf(k);
+  const c={name:col('name'),fac:col('faction'),pow:col('power'),cost:col('cost'),txt:col('abilities'),fp:col('faction powers'),r1:col('1'),btxt:col('ability')};
+  const factions={},powers={},bases=[];let fac=null;
+  for(const r of rows.slice(h+1)){
+    if(!r)continue;
+    const s=i=>i<0||r[i]==null?'':String(r[i]).replace(/\s+/g,' ').trim();
+    if(s(c.fac))fac=s(c.fac);
+    if(s(c.name)&&fac){
+      const p=s(c.pow),num=/^-?\d+$/.test(p),up=p.toUpperCase();
+      (factions[fac]=factions[fac]||[]).push({name:s(c.name),faction:fac,kind:num?'minion':(up==='U'||up==='C'?up:'E'),power:num?+p:0,cost:s(c.cost).toUpperCase(),text:s(c.txt)});
+    }
+    if(s(c.fp)&&fac)(powers[fac]=powers[fac]||[]).push(s(c.fp));
+    if(c.r1>0&&s(c.r1-1).toUpperCase()==='BASE'){
+      const rewards=[0,1,2].map(k=>{const t=s(c.r1+k);return{vp:+((t.match(/(\d+)\s*VP/i)||[0,0])[1]),c:+((t.match(/(\d+)\s*C/i)||[0,0])[1])}});
+      bases.push({id:bases.length+1,text:s(c.btxt),rewards});
+    }
+  }
+  if(!Object.keys(factions).length)throw new Error(`No cards found under the header row in "${sheet}".`);
+  return{factions,powers,bases,sheet};
+}
+
+function segs(text){
+  const parts=(text||'').split(LABELS),out={pre:parts[0]||'',seg:{}};
+  for(let i=1;i<parts.length;i+=2){const k=parts[i].replace(':','').trim().toLowerCase();out.seg[k]=((out.seg[k]||'')+' '+(parts[i+1]||'')).trim()}
+  return out;
+}
+const traits=d=>d.kind==='minion'?TRAITS.filter(t=>new RegExp(`\\b${t}\\b`,'i').test(segs(d.text).pre)):[];
+const isFree=d=>/^\s*Free\./i.test(d.text||'');
+
+function chips(text){
+  const out=[],t=text||'',seen=new Set();
+  const win=i=>t.slice(i,i+50).toLowerCase();
+  const scope=w=>/this minion|\bit\b|on it|move to/.test(w)?'self':/each of your minions/.test(w)?'allMine':'pick';
+  const add=o=>{const k=JSON.stringify(o);if(!seen.has(k)){seen.add(k);out.push(o)}};
+  for(const m of t.matchAll(/\bdraw (\d+|a card)/gi))add({op:'draw',n:/a card/i.test(m[1])?1:+m[1]});
+  for(const m of t.matchAll(/\bBoost (-?\d+)/gi)){const w=win(m.index+m[0].length);add({op:'boost',n:+m[1],scope:scope(w),here:/\bhere\b/.test(w)})}
+  for(const m of t.matchAll(/\bBoost this minion equal/gi))add({op:'boost',n:'X',scope:'self'});
+  for(const m of t.matchAll(/\bEnhance (\d+)/gi)){const w=win(m.index+m[0].length);add({op:'enhance',n:+m[1],scope:scope(w),here:/\bhere\b/.test(w)})}
+  if(/Defeat your Enhancement/i.test(t))add({op:'enhance',n:-1,scope:'pick',mine:true});
+  let df=false;
+  for(const m of t.matchAll(/\bDefeat (X|\d+|this minion|one of your minions|your minion|a Condition or Upgrade|any Condition or Upgrade)/gi)){
+    df=true;const a=m[1].toLowerCase(),w=win(m.index+m[0].length);
+    if(a.includes('condition'))add({op:'defeatCard'});
+    else if(a==='this minion')add({op:'defeat',scope:'self'});
+    else if(a.includes('your'))add({op:'defeat',mine:true});
+    else add({op:'defeat',n:a==='x'?'X':+a,here:/\bhere\b|this base/.test(w)});
+  }
+  if(!df&&/\bDefeat\b/i.test(t)&&!/Defeat (it|this card|the minion)\b/i.test(t))add({op:'defeat'});
+  for(const m of t.matchAll(/\bSearch( and play)?/gi)){
+    const w=win(m.index+m[0].length),mx=w.match(/minion (\d+)/)||w.match(/(\d+) power minion/);
+    add({op:'search',play:!!m[1],kind:/upgrade/.test(w)?'U':/minion/.test(w)?'minion':'any',max:mx?+mx[1]:null,here:/\bhere\b|\bthere\b/.test(w)});
+  }
+  for(const m of t.matchAll(/\bPlay a Minion (\d+) for free/gi))add({op:'freeplay',max:+m[1]});
+  if(/\bPlay (a )?minion\b(?! ?\d)/i.test(t))add({op:'freeplay',max:null});
+  if(/token minion/i.test(t))add({op:'token'});
+  for(const m of t.matchAll(/\b(?:gain|get) (\d+) Counters?/gi))add({op:'counters',n:+m[1]});
+  for(const m of t.matchAll(/\+(\d+)\s*C\b/g))add({op:'counters',n:+m[1]});
+  for(const m of t.matchAll(/(?:\bgain|\+)\s?(\d+)\s?VP/gi))add({op:'vp',n:+m[1]});
+  for(const m of t.matchAll(/Flip your \[?(M|A|Minion|Action)/gi))add({op:'flip',tok:m[1][0].toUpperCase()});
+  for(const m of t.matchAll(/\bmove\b/gi)){add({op:'move',scope:scope(win(m.index))});break}
+  if(/\bswap\b[^.]*minion/i.test(t))add({op:'swap'});
+  if(/\breturn\b/i.test(t)&&!/Upgrade in your discard/i.test(t))add({op:'return'});
+  if(/shuffle/i.test(t)&&/discard/i.test(t))add({op:'shuffleIn'});
+  if(/\bdiscard (a|an|\d+|any number)\b/i.test(t))add({op:'discardHand'});
+  return out;
+}
+function chipLabel(c){
+  const n=c.n==='X'?'X':c.n;
+  return({draw:`Draw ${n}`,boost:`Boost ${n}${c.scope==='self'?' this':c.scope==='allMine'?' all yours':''}`,enhance:n<0?'Remove an Enhance':`Enhance ${n}${c.scope==='self'?' this':c.scope==='allMine'?' all yours':''}`,
+    defeat:c.scope==='self'?'Defeat this':c.mine?'Defeat your minion':`Defeat${c.n!=null?' '+n:''}${c.here?' here':''}`,defeatCard:'Defeat Upgrade/Condition',
+    search:`Search${c.play?' & play':''}: ${c.kind==='U'?'Upgrade':c.kind==='minion'?'minion':'card'}${c.max!=null?' ≤'+c.max:''}`,freeplay:`Free play: minion${c.max!=null?' ≤'+c.max:''}`,
+    token:'Place token minion',counters:`Gain ${n} counter${n===1?'':'s'}`,vp:`Gain ${n} VP`,flip:`Flip ${c.tok} face up`,move:c.scope==='self'?'Move this':'Move a minion',
+    swap:'Swap two minions',return:'Return a minion',shuffleIn:'Shuffle from discard',discardHand:'Discard from hand'})[c.op];
+}
+
+function newInst(def,owner,token=false){const id='i'+(S.next++);S.inst[id]={id,def,owner,enh:0,boost:0,att:[],talent:false,token};return id}
+function baseOf(id){return S.bases.findIndex(b=>b.minions.includes(id)||b.conds.includes(id))}
+function hostOf(id){return Object.values(S.inst).find(I=>I.att.includes(id))}
+function inPlay(id){return baseOf(id)>=0||!!hostOf(id)}
+function cur(id){const I=S.inst[id];return Math.max(0,I.def.power+I.enh+I.boost)}
+function powerAt(id,b){const m=(S.bases[b].text||'').match(/Minions here have ([+-]?\d+) power(?: \(minimum (\d+)\))?/i);const v=cur(id);return m?Math.max(m[2]?+m[2]:0,v+ +m[1]):v}
+function basePower(b,p){let t=0;for(const id of S.bases[b].minions)if(S.inst[id].owner===p)t+=powerAt(id,b);return Math.max(0,t+(S.bases[b].temp[p]||0))}
+function ranking(b){const pw=S.players.map((_,p)=>basePower(b,p));return pw.map((v,p)=>({p,v,place:v>0?1+pw.filter(x=>x>v).length:null}))}
+function hasTrait(id,t){const I=S.inst[id];return traits(I.def).includes(t)||I.att.some(a=>new RegExp(`\\b${t}\\b`,'i').test(S.inst[a].def.text))}
+
+function pull(id){
+  for(const p of S.players)for(const k of['hand','deck','discard']){const i=p[k].indexOf(id);if(i>=0)p[k].splice(i,1)}
+  for(const b of S.bases){b.minions=b.minions.filter(x=>x!==id);b.conds=b.conds.filter(x=>x!==id)}
+  const h=hostOf(id);if(h)h.att=h.att.filter(x=>x!==id);
+}
+function leavePlay(id,to){
+  const I=S.inst[id];
+  for(const a of[...I.att]){pull(a);S.players[S.inst[a].owner].discard.push(a)}
+  I.att=[];pull(id);I.enh=0;I.boost=0;I.talent=false;
+  if(I.token){delete S.inst[id];return}
+  S.players[I.owner][to].push(id);
+}
+function draw(p,n){
+  const pl=S.players[p];
+  for(let k=0;k<n;k++){
+    if(!pl.deck.length){if(!pl.discard.length)break;pl.deck=shuffle(pl.discard);pl.discard=[];log(`${pl.name} reshuffled their discard pile`)}
+    pl.hand.push(pl.deck.pop());
+  }
+}
+function addFx(src,text,ctx,selfScope){const cs=chips(text).map(c=>selfScope&&c.scope==='pick'&&(c.op==='boost'||c.op==='enhance')?{...c,scope:'self'}:c);if(cs.length||text)S.fx.push({id:S.next++,src,text,chips:cs,used:[],ctx})}
+
+function startGame(cfg,players){
+  const pool=DB.bases.filter(b=>cfg.blankBases||b.text);
+  S={cfg,next:1,inst:{},round:1,turn:0,first:0,phase:'mulligan',mull:0,fx:[],log:[],
+    bases:shuffle([...pool]).slice(0,cfg.bases).map(b=>({...b,minions:[],conds:[],temp:{}})),
+    players:players.map(p=>({name:p.name,factions:p.factions,hand:[],deck:[],discard:[],counters:cfg.counters,vp:0,tok:{M:true,A:true},played:false,used:{}}))};
+  S.players.forEach((pl,p)=>{pl.deck=shuffle(pl.factions.flatMap(f=>DB.factions[f].map(d=>newInst(d,p))));draw(p,cfg.hand)});
+  S.order=turnOrder();HIST=[];log('Game started');
+}
+function turnOrder(){const n=S.players.length,a=[...Array(n)].map((_,k)=>(S.first+k)%n);return[...a,...a.slice().reverse()]}
+
+function payOptions(pl,d,free){
+  if(free||isFree(d))return[[]];
+  if(pl.played)return[];
+  const c=d.cost;
+  if(c==='MA')return pl.tok.M&&pl.tok.A?[['M','A']]:[];
+  if(c==='M/A')return['M','A'].filter(t=>pl.tok[t]).map(t=>[t]);
+  if(c==='M'||c==='A')return pl.tok[c]?[[c]]:[];
+  return[[]];
+}
+function playCard(id,pay,free,target){
+  const I=S.inst[id],pl=S.players[I.owner],d=I.def,fr=free||isFree(d);
+  if(d.kind==='minion'&&traits(d).includes('Lonely')&&!S.bases[target].minions.some(x=>S.inst[x].owner===I.owner))return UI.msg=`${d.name} is Lonely: play it where you already have a minion.`;
+  pay.forEach(t=>pl.tok[t]=false);if(!fr)pl.played=true;
+  pull(id);
+  const sg=segs(d.text),onPlay=[sg.pre,sg.seg['when played']].filter(Boolean).join(' ').trim();
+  if(d.kind==='minion'){S.bases[target].minions.push(id);
+    const bt=S.bases[target].text||'';if(/play (a minion|one) here|minions played here/i.test(bt))addFx(`Base ${S.bases[target].id}`,bt,{pid:I.owner,iid:id,base:target},/minions played here/i.test(bt));}
+  else if(d.kind==='C')S.bases[target].conds.push(id);
+  else if(d.kind==='U')S.inst[target].att.push(id);
+  else pl.discard.push(id);
+  log(`${pl.name} played ${d.name}${fr?' for free':''}${pay.length?` (${pay.join('+')})`:''}`);
+  if(onPlay)addFx(d.name,onPlay,{pid:I.owner,iid:d.kind==='U'?target:id,base:d.kind==='minion'||d.kind==='C'?target:d.kind==='U'?baseOf(target):null});
+}
+
+function startTarget(t){UI.target=t;UI.sel=null;render()}
+function runChip(fx,ci){
+  const c=fx.chips[ci],ctx=fx.ctx,pl=S.players[ctx.pid],done=()=>{fx.used.push(ci)};
+  const withN=f=>c.n==='X'?askNumber(`Amount for ${chipLabel(c)}`,n=>f(n)):f(c.n);
+  const mineOk=id=>S.inst[id].owner===ctx.pid;
+  switch(c.op){
+    case'draw':return act(()=>{draw(ctx.pid,c.n);done();log(`${pl.name} drew ${c.n}`)});
+    case'counters':return act(()=>{pl.counters+=c.n;done();log(`${pl.name} gained ${c.n} counter(s)`)});
+    case'vp':return act(()=>{pl.vp+=c.n;done();log(`${pl.name} gained ${c.n} VP`)});
+    case'flip':return act(()=>{pl.tok[c.tok]=true;done();log(`${pl.name} flipped ${c.tok} face up`)});
+    case'boost':case'enhance':return withN(n=>{
+      const k=c.op==='boost'?'boost':'enh',apply=id=>{S.inst[id][k]+=n;if(k==='enh')S.inst[id].enh=Math.max(0,S.inst[id].enh);log(`${chipLabel({...c,n})} on ${S.inst[id].def.name}`)};
+      if(c.scope==='self'&&ctx.iid&&S.inst[ctx.iid])return act(()=>{apply(ctx.iid);done()});
+      if(c.scope==='allMine')return act(()=>{S.bases.forEach((b,bi)=>{if(!c.here||bi===ctx.base)b.minions.filter(mineOk).forEach(apply)});done()});
+      startTarget({kind:'minion',label:chipLabel({...c,n}),ok:id=>(!c.here||baseOf(id)===ctx.base)&&(!c.mine||mineOk(id)),run:id=>act(()=>{apply(id);done()})});
+    });
+    case'defeat':return withN(n=>{
+      if(c.scope==='self'&&ctx.iid&&S.inst[ctx.iid])return act(()=>{log(`${S.inst[ctx.iid].def.name} was defeated`);leavePlay(ctx.iid,'discard');done()});
+      startTarget({kind:'minion',label:chipLabel({...c,n}),ok:id=>(n==null||cur(id)<=n)&&(!c.here||baseOf(id)===ctx.base)&&(!c.mine||mineOk(id)),
+        run:id=>{if(hasTrait(id,'Indestructible')){UI.msg=`${S.inst[id].def.name} is Indestructible. Use Force defeat in the toolbox to override.`;return render()}
+          act(()=>{log(`${S.inst[id].def.name} was defeated`);leavePlay(id,'discard');done()})}});
+    });
+    case'defeatCard':return startTarget({kind:'card',label:chipLabel(c),run:id=>act(()=>{log(`${S.inst[id].def.name} was defeated`);pull(id);S.players[S.inst[id].owner].discard.push(id);done()})});
+    case'move':
+      if(c.scope==='self'&&ctx.iid&&S.inst[ctx.iid]&&baseOf(ctx.iid)>=0)return moveFlow(ctx.iid,done);
+      return startTarget({kind:'minion',label:'Pick a minion to move',run:id=>moveFlow(id,done)});
+    case'swap':return startTarget({kind:'minion',label:'Swap: pick the first minion',run:a=>startTarget({kind:'minion',label:'Swap: pick the second minion',ok:b=>b!==a,run:b=>act(()=>{
+      const ba=baseOf(a),bb=baseOf(b);if(ba===bb)return;S.bases[ba].minions=S.bases[ba].minions.filter(x=>x!==a);S.bases[bb].minions=S.bases[bb].minions.filter(x=>x!==b);
+      S.bases[ba].minions.push(b);S.bases[bb].minions.push(a);log(`Swapped ${S.inst[a].def.name} and ${S.inst[b].def.name}`);done()})})});
+    case'return':return startTarget({kind:'minion',label:'Pick a minion to return',run:id=>{if(hasTrait(id,'Immovable')){UI.msg=`${S.inst[id].def.name} is Immovable.`;return render()}
+      act(()=>{log(`${S.inst[id].def.name} returned to hand`);leavePlay(id,'hand');done()})}});
+    case'token':return startTarget({kind:'base',label:'Pick a base with none of your minions',ok:b=>!S.bases[b].minions.some(mineOk),run:b=>act(()=>{S.bases[b].minions.push(newInst({name:'Token',faction:'',kind:'minion',power:1,cost:'',text:''},ctx.pid,true));log(`${pl.name} placed a token minion`);done()})});
+    case'search':{
+      const ok=id=>{const d=S.inst[id].def;return(c.kind==='any'||d.kind===c.kind)&&(c.max==null||d.power<=c.max)};
+      return pickFrom(`Search your deck: ${chipLabel(c)}`,pl.deck.filter(ok),id=>{
+        act(()=>{pull(id);pl.hand.push(id);shuffle(pl.deck);done();log(`${pl.name} searched for ${S.inst[id].def.name}`)});
+        if(c.play)UI.sel={id,free:true,pay:[],here:c.here?ctx.base:null};render();
+      },'Nothing in your deck matches. Shuffle anyway?',()=>act(()=>{shuffle(pl.deck);done()}));
+    }
+    case'freeplay':return pickFrom(`Play a minion${c.max!=null?' of power '+c.max+' or less':''} for free`,pl.hand.filter(id=>S.inst[id].def.kind==='minion'&&(c.max==null||S.inst[id].def.power<=c.max)),
+      id=>{act(done);UI.sel={id,free:true,pay:[]};render()});
+    case'shuffleIn':return pickFrom('Shuffle a card from your discard into your deck',pl.discard,id=>act(()=>{pull(id);pl.deck.push(id);shuffle(pl.deck);done();log(`${pl.name} shuffled ${S.inst[id].def.name} into their deck`)}));
+    case'discardHand':return pickFrom('Discard a card from your hand',pl.hand,id=>act(()=>{pull(id);pl.discard.push(id);done();log(`${pl.name} discarded ${S.inst[id].def.name}`)}));
+  }
+}
+function moveFlow(id,done){
+  if(hasTrait(id,'Immovable')){UI.msg=`${S.inst[id].def.name} is Immovable.`;return render()}
+  startTarget({kind:'base',label:`Move ${S.inst[id].def.name} to which base?`,ok:b=>b!==baseOf(id),run:b=>act(()=>{const f=baseOf(id);S.bases[f].minions=S.bases[f].minions.filter(x=>x!==id);S.bases[b].minions.push(id);log(`${S.inst[id].def.name} moved to base ${S.bases[b].id}`);done&&done()})});
+}
+function pickFrom(title,ids,cb,emptyMsg,emptyCb){UI.modal={title,ids,cb,emptyMsg,emptyCb};render()}
+function askNumber(title,cb){UI.modal={title,number:true,cb};render()}
+
+function usePower(key,text,cost){
+  const pl=P(),p=pidNow(),go=n=>act(()=>{pl.counters-=n;pl.used[key]=true;log(`${pl.name} used "${text}"`);addFx(`Faction power`,text.replace(/^[^:]*:\s*/,'').replace(/\bX\b/g,n),{pid:p,iid:null,base:null})});
+  if(cost==='X')return askNumber('How many counters to spend?',n=>n<=pl.counters?go(n):(UI.msg='Not enough counters.',render()));
+  go(+cost);
+}
+function useTalent(id){
+  const I=S.inst[id],sg=segs(I.def.text),h=hostOf(id);
+  act(()=>{I.talent=true;log(`${S.players[I.owner].name} used ${I.def.name}'s talent`);addFx(`${I.def.name} talent`,sg.seg.talent,{pid:I.owner,iid:h?h.id:id,base:baseOf(h?h.id:id)})});
+}
+function useA(id){const I=S.inst[id],pl=S.players[I.owner];act(()=>{pl.tok.A=false;log(`${pl.name} used ${I.def.name}'s A ability`);addFx(`${I.def.name} (A)`,segs(I.def.text).seg.a,{pid:I.owner,iid:id,base:baseOf(id)})})}
+
+function endTurn(){act(()=>{P().played=false;S.turn++;UI.sel=UI.target=null;if(S.turn>=S.order.length){S.phase='scoring';log('All turns taken, ready to score')}})}
+function scoreBases(){act(()=>{
+  S.lastScore=S.bases.map((b,bi)=>ranking(bi).map(r=>{const rw=r.place?b.rewards[r.place-1]:null;if(rw){S.players[r.p].vp+=rw.vp;S.players[r.p].counters+=rw.c}return{...r,rw}}));
+  S.lastScore.forEach((rs,bi)=>rs.filter(r=>r.rw).forEach(r=>log(`Base ${S.bases[bi].id}: ${S.players[r.p].name} placed ${r.place} for ${r.rw.vp} VP, ${r.rw.c} C`)));
+  for(const I of Object.values(S.inst))if(inPlay(I.id)&&segs(I.def.text).seg['after scoring'])addFx(`${I.def.name} after scoring`,segs(I.def.text).seg['after scoring'],{pid:I.owner,iid:hostOf(I.id)?hostOf(I.id).id:I.id,base:baseOf(hostOf(I.id)?hostOf(I.id).id:I.id)});
+  S.bases.forEach((b,bi)=>{if(/after scoring/i.test(b.text))addFx(`Base ${b.id} after scoring`,b.text.replace(/^.*?After Scoring:\s*/i,''),{pid:pidNow0(),iid:null,base:bi})});
+  S.phase='after';
+})}
+const pidNow0=()=>S.first;
+function finishRound(){act(()=>{
+  if(S.round>=S.cfg.rounds){S.phase='over';S.fx=[];log('Game over');return}
+  for(const I of Object.values(S.inst)){I.boost=0;I.talent=false}
+  S.bases.forEach(b=>b.temp={});
+  const n=S.players.length,low=Math.min(...S.players.map(p=>p.vp));
+  for(let k=1;k<=n;k++){const p=(S.first+k)%n;if(S.players[p].vp===low){S.first=p;break}}
+  S.players.forEach((pl,p)=>{pl.tok={M:true,A:true};pl.played=false;pl.used={};draw(p,S.cfg.draw)});
+  S.round++;S.turn=0;S.order=turnOrder();S.fx=[];
+  log(`Round ${S.round} begins, ${S.players[S.first].name} has the First Player marker`);
+  S.phase=S.players.some(p=>p.hand.length>S.cfg.limit)?'limit':'play';
+})}
+
+function cardHTML(id,cls='',extra=''){
+  const I=S.inst[id],d=I.def,tr=traits(d);
+  return`<div class="idx hc ${cls}" ${extra}><div class="hd"><span class="nm">${esc(d.name)}</span>${d.kind==='minion'?`<span class="pow">${d.power}</span>`:''}</div>
+  <div class="row" style="justify-content:space-between"><span class="kind">${esc(d.faction)} ${({minion:'minion',E:'event',U:'upgrade',C:'condition'})[d.kind]}${isFree(d)?', free':''}</span>
+  <span class="cost">${d.cost.includes('M')?'<span class="tok M">M</span>':''}${d.cost.includes('A')?'<span class="tok A">A</span>':''}</span></div>
+  ${tr.length?`<div class="badges">${tr.map(t=>`<span class="badge">${t}</span>`).join('')}</div>`:''}<div class="tx">${esc(d.text)}</div></div>`;
+}
+function minionHTML(id,b){
+  const I=S.inst[id],d=I.def,t=UI.target,valid=t&&t.kind==='minion'&&(!t.ok||t.ok(id)),sg=segs(d.text),mine=I.owner===pidNow()&&S.phase==='play';
+  return`<div class="idx m ${UI.pick===id?'sel':''} ${valid?'valid':''}" data-a="minion" data-v="${id}">
+  <div class="hd"><span class="nm">${esc(d.name)}</span><span class="pow">${powerAt(id,b)}</span></div>
+  <div class="mods"><span class="muted">${esc(d.faction||'token')} ${d.power}</span>${I.enh?`<span class="e">+${I.enh} enh</span>`:''}${I.boost?`<span class="b">${I.boost>0?'+':''}${I.boost} boost</span>`:''}${I.talent?'<span class="muted">talent used</span>':''}</div>
+  ${traits(d).length?`<div class="badges">${traits(d).map(x=>`<span class="badge">${x}</span>`).join('')}</div>`:''}
+  ${d.text?`<div class="tx muted">${esc(d.text)}</div>`:''}
+  ${mine&&sg.seg.talent&&!I.talent?`<button class="chip" data-a="talent" data-v="${id}">Use talent</button>`:''}
+  ${mine&&sg.seg.a&&S.players[I.owner].tok.A?`<button class="chip" data-a="useA" data-v="${id}">Use A ability</button>`:''}
+  ${I.att.map(a=>attHTML(a)).join('')}</div>`;
+}
+function attHTML(a){
+  const A=S.inst[a],t=UI.target,valid=t&&t.kind==='card',mine=A.owner===pidNow()&&S.phase==='play';
+  return`<div class="att ${UI.pick===a?'sel':''} ${valid?'valid':''}" data-a="card" data-v="${a}" style="--pc:var(--p${A.owner})"><b>${esc(A.def.name)}</b> <span class="muted">(${esc(S.players[A.owner].name)})</span><br>${esc(A.def.text)}
+  ${mine&&segs(A.def.text).seg.talent&&!A.talent?`<br><button class="chip" data-a="talent" data-v="${a}">Use talent</button>`:''}</div>`;
+}
+function baseHTML(b,bi){
+  const t=UI.target,sel=UI.sel,validT=t&&t.kind==='base'&&(!t.ok||t.ok(bi)),
+    validSel=sel&&!t&&['minion','C'].includes(S.inst[sel.id].def.kind)&&sel.pay&&(sel.here==null||sel.here===bi),rk=ranking(bi),mx=Math.max(1,...rk.map(r=>r.v));
+  return`<div class="base ${validT||validSel?'valid':''} ${UI.pick==='b'+bi?'sel':''}" data-a="base" data-v="${bi}">
+  <div class="base-h" data-a="pickBase" data-v="${bi}"><div class="bn">Base ${b.id}</div><div class="muted" style="font-size:13px">${esc(b.text||'No ability')}</div>
+  <div class="rw">${b.rewards.map((r,k)=>`<span>${k+1}${['st','nd','rd'][k]}: ${r.vp} VP, ${r.c} C</span>`).join('')}</div></div>
+  <div class="tally">${rk.map(r=>`<div class="bar" style="--pc:var(--p${r.p})"><span>${esc(S.players[r.p].name)}</span><i style="width:${r.v/mx*100}%"></i><b>${r.v}</b></div>`).join('')}</div>
+  ${b.conds.map(attHTML).join('')}
+  ${S.players.map((pl,p)=>{const ms=b.minions.filter(id=>S.inst[id].owner===p);return ms.length||b.temp[p]?`<div class="lane" style="--pc:var(--p${p})"><div class="lane-h">${esc(pl.name)}${b.temp[p]?` (extra power ${b.temp[p]>0?'+':''}${b.temp[p]})`:''}</div>${ms.map(id=>minionHTML(id,bi)).join('')}</div>`:''}).join('')}
+  </div>`;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(!S||!DB||UI.setup){app.innerHTML=setupHTML();renderModal();return}
+  const pl=P()||S.players[0],p=S.phase==='play'?pidNow():null;
+  let banner='';
+  if(UI.target)banner=`<div class="banner"><span>${esc(UI.target.label)}</span><button data-a="cancel">Cancel</button></div>`;
+  else if(UI.sel){const d=S.inst[UI.sel.id].def;
+    banner=`<div class="banner"><span>${!UI.sel.pay?`Choose how to pay for ${esc(d.name)}`:d.kind==='E'?`Play ${esc(d.name)}?`:d.kind==='U'?`Click a minion to attach ${esc(d.name)}`:`Click a base to play ${esc(d.name)}${UI.sel.free?' for free':''}`}</span>
+    <span class="row">${!UI.sel.pay?payOptions(S.players[S.inst[UI.sel.id].owner],d,UI.sel.free).map(o=>`<button data-a="pay" data-v="${o.join('')}">Pay ${o.join('+')||'nothing'}</button>`).join(''):''}
+    ${UI.sel.pay&&d.kind==='E'?'<button class="primary" data-a="playE">Play</button>':''}<button data-a="cancel">Cancel</button></span></div>`}
+  const msg=UI.msg?`<div class="banner" style="background:var(--bad)"><span>${esc(UI.msg)}</span><button data-a="clearMsg">OK</button></div>`:'';
+  app.innerHTML=`
+  <div class="top"><div><div class="title">Smash Up 2 playtest table</div><div class="muted">Round ${S.round} of ${S.cfg.rounds}, ${({mulligan:'mulligans',play:'playing',scoring:'scoring',after:'after scoring',limit:'hand limit',over:'game over'})[S.phase]}</div></div>
+  <div class="order">${S.order.map((q,k)=>`<span class="${k===S.turn&&S.phase==='play'?'now':k<S.turn||S.phase!=='play'?'done':''}" style="--pc:var(--p${q})">${esc(S.players[q].name)}</span>`).join('')}</div>
+  <div class="row"><button data-a="undo" ${HIST.length?'':'disabled'}>Undo</button><button data-a="newGame">New game</button></div></div>
+  ${msg}${banner}${phaseHTML()}
+  <div class="board" style="--nb:${S.bases.length}">${S.bases.map(baseHTML).join('')}</div>
+  <div class="lower"><div>${handHTML()}</div><div class="side">${sideHTML()}</div></div>`;
+  renderModal();
+}
+function phaseHTML(){
+  if(S.phase==='mulligan'){const pl=S.players[S.mull],can=!pl.hand.some(id=>S.inst[id].def.kind==='minion');
+    return`<div class="banner"><span>${esc(pl.name)}: keep this hand?${can?' No minions, so you may mulligan.':''}</span><span class="row"><button data-a="keep">Keep</button><button data-a="mull" ${can?'':'disabled'}>Mulligan</button></span></div>`}
+  if(S.phase==='scoring')return`<div class="banner"><span>All turns are done. Adjust anything first, then score all bases.</span><button class="primary" data-a="score">Score bases</button></div>`;
+  if(S.phase==='after')return`<div class="banner"><span>Bases scored. Resolve After Scoring effects, then ${S.round>=S.cfg.rounds?'end the game':'finish the round'}.</span><button class="primary" data-a="finish">${S.round>=S.cfg.rounds?'End game':'Finish round'}</button></div>`;
+  if(S.phase==='limit'){const pl=S.players.find(x=>x.hand.length>S.cfg.limit);return`<div class="banner"><span>${esc(pl.name)} has ${pl.hand.length} cards. Click cards to discard down to ${S.cfg.limit}.</span></div>`}
+  if(S.phase==='over'){const top=Math.max(...S.players.map(x=>x.vp)),w=S.players.filter(x=>x.vp===top);return`<div class="banner"><span>${w.map(x=>esc(x.name)).join(' and ')} ${w.length>1?'share the win':'wins'} with ${top} VP.</span><button data-a="newGame">New game</button></div>`}
+  return'';
+}
+function handHTML(){
+  const who=S.phase==='mulligan'?S.mull:S.phase==='limit'?S.players.findIndex(x=>x.hand.length>S.cfg.limit):S.phase==='play'?pidNow():null;
+  if(who==null||who<0)return`<div class="panel muted">Hands are hidden outside of turns.</div>`;
+  const pl=S.players[who];
+  return`<div class="row" style="justify-content:space-between;margin-bottom:8px"><h3 style="color:var(--p${who})">${esc(pl.name)}'s hand (${pl.hand.length})</h3><span class="muted">Deck ${pl.deck.length}, discard ${pl.discard.length}</span></div>
+  <div class="hand">${pl.hand.map(id=>{const d=S.inst[id].def,off=S.phase==='play'&&!payOptions(pl,d,false).length;
+    return cardHTML(id,`${UI.sel&&UI.sel.id===id?'sel':''} ${off?'off':''}`,`data-a="hand" data-v="${id}"`)}).join('')||'<div class="muted">No cards in hand.</div>'}</div>`;
+}
+function sideHTML(){
+  if(!['play','scoring','after'].includes(S.phase))return scoresHTML()+logHTML();
+  const p=S.phase==='play'?pidNow():S.first,pl=S.players[p];
+  const fx=S.fx.map((f,fi)=>`<div class="fx"><div class="src">${esc(f.src)} <span class="muted">(${esc(S.players[f.ctx.pid]?.name||'')})</span></div><div class="tx">${esc(f.text)}</div>
+    <div class="row">${f.chips.map((c,ci)=>`<button class="chip ${f.used.includes(ci)?'used':''}" data-a="chip" data-v="${fi}:${ci}">${esc(chipLabel(c))}${f.used.filter(x=>x===ci).length>1?' ×'+f.used.filter(x=>x===ci).length:f.used.includes(ci)?' ✓':''}</button>`).join('')}
+    <button class="chip" data-a="dismiss" data-v="${fi}">Done</button></div></div>`).join('');
+  const powers=S.phase==='play'?pl.factions.flatMap(f=>(DB.powers[f]||[]).map((t,i)=>{const key=`${f}#${i}`,m=t.match(/^(\d+|X)\s*Counters?\s*:/i),cost=m?m[1].toUpperCase():null,
+    dis=!cost||pl.used[key]||(cost!=='X'&&pl.counters<+cost)||(cost==='X'&&pl.counters<1);
+    return`<div class="pw"><span>${esc(t)}</span><button data-a="power" data-v="${esc(key)}" ${dis?'disabled':''}>${pl.used[key]?'Used':'Use'}</button></div>`})).join(''):'';
+  return`${S.phase==='play'?`<div class="panel"><div class="row" style="justify-content:space-between"><h3 style="color:var(--p${p})">${esc(pl.name)}'s turn</h3><button class="primary" data-a="endTurn">End turn</button></div>
+    <div class="stats"><div><b>${pl.vp}</b>VP</div><div><b>${pl.counters}</b>counters</div><div><b class="cost"><span class="tok M ${pl.tok.M?'':'down'}" data-a="tok" data-v="M">M</span><span class="tok A ${pl.tok.A?'':'down'}" data-a="tok" data-v="A">A</span></b>tokens</div><div><b>${pl.played?'used':'open'}</b>card play</div></div>
+    <div class="row" style="margin-top:8px"><button data-a="adj" data-v="counters:1">+1 counter</button><button data-a="adj" data-v="counters:-1">−1 counter</button><button data-a="adj" data-v="vp:1">+1 VP</button><button data-a="adj" data-v="vp:-1">−1 VP</button><button data-a="draw1">Draw 1</button><button data-a="pile" data-v="discard">Discard pile</button><button data-a="pile" data-v="deck">Search deck</button><button data-a="adj" data-v="played:0">Reset card play</button></div></div>`:''}
+  ${toolHTML()}
+  ${fx?`<div class="panel"><h3>To resolve</h3>${fx}</div>`:''}
+  ${powers?`<div class="panel"><h3>Faction powers</h3>${powers}</div>`:''}
+  ${S.phase!=='play'?scorePreviewHTML():''}${scoresHTML()}${logHTML()}`;
+}
+function toolHTML(){
+  const k=UI.pick;if(!k||UI.target)return'';
+  if(k[0]==='b'){const bi=+k.slice(1);return`<div class="panel"><h3>Base ${S.bases[bi].id}: extra power</h3>${S.players.map((pl,p)=>`<div class="pw"><span style="color:var(--p${p})">${esc(pl.name)}: ${S.bases[bi].temp[p]||0}</span><span class="row"><button data-a="temp" data-v="${bi}:${p}:-1">−1</button><button data-a="temp" data-v="${bi}:${p}:1">+1</button></span></div>`).join('')}<div class="muted" style="font-size:12px">Temporary, cleared at the end of the round. For effects like Enchanted Grove.</div></div>`}
+  const I=S.inst[k];if(!I)return'';
+  if(I.def.kind!=='minion')return`<div class="panel"><h3>${esc(I.def.name)}</h3><div class="row"><button data-a="tool" data-v="defeatCard">Defeat</button><button data-a="tool" data-v="close">Close</button></div></div>`;
+  return`<div class="panel"><h3>${esc(I.def.name)} <span class="muted">(${esc(S.players[I.owner].name)})</span></h3><div class="row">
+  <button data-a="tool" data-v="enh:1">Enhance +1</button><button data-a="tool" data-v="enh:-1">Enhance −1</button><button data-a="tool" data-v="boost:1">Boost +1</button><button data-a="tool" data-v="boost:-1">Boost −1</button>
+  <button data-a="tool" data-v="move">Move</button><button data-a="tool" data-v="return">Return to hand</button><button data-a="tool" data-v="defeat">Force defeat</button>${I.talent?'<button data-a="tool" data-v="talent">Reset talent</button>':''}<button data-a="tool" data-v="close">Close</button></div></div>`;
+}
+function scorePreviewHTML(){
+  return`<div class="panel"><h3>${S.phase==='after'?'Last scoring':'Current standings'}</h3><table class="score"><tr><th>Base</th>${S.players.map((pl,p)=>`<th style="color:var(--p${p})">${esc(pl.name)}</th>`).join('')}</tr>
+  ${S.bases.map((b,bi)=>{const rk=S.phase==='after'&&S.lastScore?S.lastScore[bi]:ranking(bi);return`<tr><td>${b.id}</td>${rk.map(r=>`<td>${r.v}${r.place?` (${r.place}${['st','nd','rd'][r.place-1]||'th'})`:''}</td>`).join('')}</tr>`}).join('')}</table></div>`;
+}
+function scoresHTML(){return`<div class="panel"><h3>Score</h3>${S.players.map((pl,p)=>`<div class="pw"><span style="color:var(--p${p})">${esc(pl.name)}${S.first===p?' (first player)':''}</span><span>${pl.vp} VP, ${pl.counters} counters, ${pl.hand.length} in hand</span></div>`).join('')}</div>`}
+function logHTML(){return`<div class="panel"><h3>Log</h3><div class="log">${S.log.map(l=>`<div>${esc(l)}</div>`).join('')}</div></div>`}
+
+function setupHTML(){
+  const st=UI.setup||(UI.setup={cfg:{...DEFAULT_CFG},players:[]}),cfg=st.cfg,facs=DB?Object.keys(DB.factions):[];
+  while(st.players.length<cfg.players)st.players.push({name:`Player ${st.players.length+1}`,factions:[facs[st.players.length*2]||'',facs[st.players.length*2+1]||'']});
+  st.players.length=cfg.players;
+  const num=(k,label,min,max)=>`<label>${label}<input type="number" min="${min}" max="${max}" value="${cfg[k]}" data-cfg="${k}"></label>`;
+  return`<div class="setup panel"><div class="title" style="margin-bottom:6px">Smash Up 2 playtest table</div>
+  <p class="muted">Hot-seat play for one person. Load the Smash Up 2 worksheet (.xlsx); cards, bases and faction powers are read from its card list tab, so edits to the sheet show up next time you load it.</p>
+  <div class="row"><input type="file" accept=".xlsx,.xlsm,.xls" data-a="file">${DB?`<span class="muted">Loaded "${esc(DB.sheet)}": ${facs.length} factions, ${DB.bases.length} bases.</span>`:''}</div>
+  ${st.err?`<p class="err">${esc(st.err)}</p>`:''}
+  ${DB?`<h3 style="margin-top:16px">Rules settings</h3><div class="grid">${num('players','Players',2,4)}${num('rounds','Rounds',1,10)}${num('hand','Starting hand',1,15)}${num('mulligan','Mulligan redraw',1,15)}
+  ${num('counters','Starting counters',0,20)}${num('limit','Hand limit',1,30)}${num('bases','Bases in play',1,6)}${num('draw','Draw per round',0,5)}
+  <label>Bases with no ability<select data-cfg="blankBases"><option value="false" ${cfg.blankBases?'':'selected'}>Leave out</option><option value="true" ${cfg.blankBases?'selected':''}>Include</option></select></label></div>
+  <h3 style="margin-top:16px">Players</h3>${st.players.map((pl,p)=>`<div class="pl row" style="--pc:var(--p${p})"><input value="${esc(pl.name)}" data-pname="${p}" aria-label="Player name">
+  ${[0,1].map(k=>`<select data-pfac="${p}:${k}">${facs.map(f=>`<option ${pl.factions[k]===f?'selected':''}>${esc(f)}</option>`).join('')}</select>`).join('')}</div>`).join('')}
+  <div class="row" style="margin-top:16px"><button class="primary" data-a="start">Start game</button>${S?'<button data-a="resume">Back to current game</button>':''}</div>`:''}</div>`;
+}
+function renderModal(){
+  const el=document.getElementById('modal'),m=UI.modal;
+  if(!m){el.innerHTML='';return}
+  el.innerHTML=`<div class="scrim" data-a="closeModal"><div class="modal" data-a="noop"><div class="row" style="justify-content:space-between"><h3>${esc(m.title)}</h3><button data-a="closeModal">Close</button></div>
+  ${m.number?`<div class="row" style="margin-top:10px"><input type="number" id="numIn" value="1" min="0"><button class="primary" data-a="numOk">OK</button></div>`:
+  m.ids.length?`<div class="hand">${m.ids.map(id=>cardHTML(id,'',`data-a="modalPick" data-v="${id}"`)).join('')}</div>${m.actions?`<div class="row" style="margin-top:10px">${m.actions}</div>`:''}`:
+  `<p class="muted">${esc(m.emptyMsg||'Nothing to choose from.')}</p>${m.emptyCb?'<button data-a="modalEmpty">Yes</button>':''}`}</div></div>`;
+}
+
+function clickTarget(kind,v){
+  const t=UI.target;if(!t||t.kind!==kind)return false;
+  if(t.ok&&!t.ok(kind==='base'?+v:v))return true;
+  UI.target=null;t.run(kind==='base'?+v:v);return true;
+}
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]');if(!el)return;
+  const a=el.dataset.a,v=el.dataset.v;
+  if(a==='noop'||a==='file')return;
+  if(a!=='closeModal')e.stopPropagation();
+  switch(a){
+    case'closeModal':if(e.target===el||el.tagName==='BUTTON'){UI.modal=null;render()}return;
+    case'modalPick':{const m=UI.modal;UI.modal=null;m.cb(v);return render()}
+    case'modalEmpty':{const m=UI.modal;UI.modal=null;m.emptyCb();return}
+    case'numOk':{const m=UI.modal,n=+document.getElementById('numIn').value||0;UI.modal=null;m.cb(n);return render()}
+    case'start':{const st=UI.setup;if(st.players.some(p=>p.factions[0]===p.factions[1]))return(st.err='Each player needs two different factions.',render());
+      const all=st.players.flatMap(p=>p.factions);if(new Set(all).size!==all.length)return(st.err='Each faction can only be used by one player.',render());
+      startGame({...st.cfg},st.players.map(p=>({...p})));UI={sel:null,target:null,modal:null,pick:null,msg:'',setup:null};save();return render()}
+    case'resume':UI.setup=null;return render();
+    case'newGame':UI.setup={cfg:{...(S?.cfg||DEFAULT_CFG)},players:S?S.players.map(p=>({name:p.name,factions:[...p.factions]})):[]};return render();
+    case'undo':if(HIST.length){S=JSON.parse(HIST.pop());UI.sel=UI.target=UI.pick=null;UI.msg='';save();render()}return;
+    case'cancel':UI.sel=UI.target=null;return render();
+    case'clearMsg':UI.msg='';return render();
+    case'keep':case'mull':return act(()=>{const pl=S.players[S.mull];if(a==='mull'){pl.deck.push(...pl.hand);pl.hand=[];shuffle(pl.deck);draw(S.mull,S.cfg.mulligan);log(`${pl.name} took a mulligan`)}
+      else{S.mull++;if(S.mull>=S.players.length){S.phase='play';log(`${S.players[S.order[0]].name} takes the first turn`)}}});
+    case'hand':{
+      if(S.phase==='limit')return act(()=>{const pl=S.players.find(x=>x.hand.length>S.cfg.limit);pull(v);pl.discard.push(v);log(`${pl.name} discarded ${S.inst[v].def.name} to the hand limit`);if(!S.players.some(x=>x.hand.length>S.cfg.limit))S.phase='play'});
+      if(S.phase!=='play'||UI.target)return;
+      const pl=P(),d=S.inst[v].def,opts=payOptions(pl,d,false);
+      if(!opts.length){UI.msg=pl.played&&!isFree(d)?'You already used your card play this turn.':`You need a face-up ${d.cost==='MA'?'M and A token':d.cost.replace('/',' or ')+' token'} to play ${d.name}.`;return render()}
+      UI.sel={id:v,free:false,pay:opts.length===1?opts[0]:null};UI.pick=null;return render();
+    }
+    case'pay':UI.sel.pay=v?v.split(''):[];return render();
+    case'playE':{const s=UI.sel;UI.sel=null;return act(()=>playCard(s.id,s.pay,s.free,null))}
+    case'base':case'pickBase':{
+      if(clickTarget('base',v))return;
+      const s=UI.sel;if(s&&s.pay&&['minion','C'].includes(S.inst[s.id].def.kind)){if(s.here!=null&&s.here!==+v)return;UI.sel=null;return act(()=>playCard(s.id,s.pay,s.free,+v))}
+      if(a==='pickBase'){UI.pick=UI.pick==='b'+v?null:'b'+v;render()}return;
+    }
+    case'minion':case'card':{
+      if(clickTarget(a,v))return;
+      const s=UI.sel;if(a==='minion'&&s&&s.pay&&S.inst[s.id].def.kind==='U'){UI.sel=null;return act(()=>playCard(s.id,s.pay,s.free,v))}
+      UI.pick=UI.pick===v?null:v;return render();
+    }
+    case'talent':return useTalent(v);
+    case'useA':return useA(v);
+    case'chip':{const[fi,ci]=v.split(':').map(Number);return runChip(S.fx[fi],ci)}
+    case'dismiss':return act(()=>S.fx.splice(+v,1));
+    case'power':{const[f,i]=v.split('#'),t=DB.powers[f][+i],m=t.match(/^(\d+|X)\s*Counters?\s*:/i);return usePower(v,t,m[1].toUpperCase())}
+    case'endTurn':return endTurn();
+    case'score':return scoreBases();
+    case'finish':return finishRound();
+    case'tok':return act(()=>{P().tok[v]=!P().tok[v]});
+    case'adj':{const[k,n]=v.split(':');return act(()=>{const pl=P();if(k==='played')pl.played=false;else pl[k]=Math.max(0,pl[k]+ +n)})}
+    case'draw1':return act(()=>{draw(pidNow(),1);log(`${P().name} drew 1`)});
+    case'pile':{const pl=P();return pickFrom(v==='deck'?'Search your deck (takes the card to hand and shuffles)':'Your discard pile (click a card to return it to hand)',[...pl[v]],id=>act(()=>{pull(id);pl.hand.push(id);if(v==='deck')shuffle(pl.deck);log(`${pl.name} took ${S.inst[id].def.name} from their ${v} to hand`)}),v==='deck'?'Your deck is empty.':'Your discard pile is empty.')}
+    case'temp':{const[b,p,n]=v.split(':').map(Number);return act(()=>{S.bases[b].temp[p]=(S.bases[b].temp[p]||0)+n})}
+    case'tool':{
+      const id=UI.pick,I=S.inst[id];
+      if(v==='close'){UI.pick=null;return render()}
+      if(v==='move')return moveFlow(id);
+      if(v==='defeatCard')return act(()=>{pull(id);S.players[I.owner].discard.push(id);log(`${I.def.name} was defeated`);UI.pick=null});
+      if(v==='return'||v==='defeat')return act(()=>{log(`${I.def.name} ${v==='return'?'returned to hand':'was defeated'}`);leavePlay(id,v==='return'?'hand':'discard');UI.pick=null});
+      if(v==='talent')return act(()=>{I.talent=false});
+      const[k,n]=v.split(':');return act(()=>{I[k]+= +n;if(k==='enh')I.enh=Math.max(0,I.enh);log(`${k==='enh'?'Enhance':'Boost'} ${n} on ${I.def.name}`)});
+    }
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target,st=UI.setup;
+  if(el.dataset.a==='file'&&el.files[0]){const r=new FileReader();r.onload=()=>{try{DB=parseWorkbook(XLSX.read(r.result,{type:'array'}));(UI.setup||(UI.setup={cfg:{...DEFAULT_CFG},players:[]})).err='';UI.setup.players=[]}catch(err){(UI.setup||(UI.setup={cfg:{...DEFAULT_CFG},players:[]})).err=err.message}render()};r.readAsArrayBuffer(el.files[0]);return}
+  if(!st)return;
+  if(el.dataset.cfg){const k=el.dataset.cfg;st.cfg[k]=k==='blankBases'?el.value==='true':Math.max(+el.min||0,Math.min(+el.max||99,+el.value||0));return render()}
+  if(el.dataset.pname)st.players[+el.dataset.pname].name=el.value||`Player ${+el.dataset.pname+1}`;
+  if(el.dataset.pfac){const[p,k]=el.dataset.pfac.split(':').map(Number);st.players[p].factions[k]=el.value}
+});
+if(typeof XLSX==='undefined')document.getElementById('app').innerHTML='<div class="setup panel err">The spreadsheet reader did not load. Check your connection and reload the page.</div>';
+else{load();render()}
+</script>
+</body>
+</html>

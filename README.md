@@ -9,18 +9,18 @@ Load the Smash Up 2 worksheet (.xlsx) from the setup screen. Cards, bases and fa
 Any static file server works, for example:
 
 ```
-npx serve .
+npx serve public
 ```
 
 ## Deploy to Cloudflare
 
-1. Push this repo to GitHub. All files live in the repo root.
+1. Push this repo to GitHub.
 2. In the Cloudflare dashboard, go to Workers & Pages, then Create, then Import a repository, and pick this repo.
-3. Leave the build command empty. The deploy command is `npx wrangler deploy`, which reads `wrangler.jsonc` and serves the repo root. `.assetsignore` keeps the README, config and license from being served.
+3. Leave the build command empty. The deploy command is `npx wrangler deploy`, which reads `wrangler.jsonc` and serves the `public` folder.
 4. Every push to `main` redeploys. The site is live at `su2-playtest-table.<your-subdomain>.workers.dev`, and you can add a custom domain under the Worker's settings.
 
-Classic Cloudflare Pages also works: no build command, output directory left as the root.
+Classic Cloudflare Pages also works: no build command, output directory `public`.
 
 ## Updating SheetJS
 
-`xlsx.full.min.js` is SheetJS 0.18.5, the last version published to npm. Newer versions are distributed from https://cdn.sheetjs.com. To upgrade, download `xlsx.full.min.js` from there and replace the file.
+`public/vendor/xlsx.full.min.js` is SheetJS 0.18.5, the last version published to npm. Newer versions are distributed from https://cdn.sheetjs.com. To upgrade, download `xlsx.full.min.js` from there and replace the file.
